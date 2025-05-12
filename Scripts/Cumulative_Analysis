@@ -1,0 +1,37 @@
+#Cumulative Analysis
+#Gives the Running and Moving Values over the time
+
+select Order_Month,Total_Sales_Amount,
+sum(Total_Sales_Amount) over(partition by Order_Month) as Running_Total_Sales
+from
+(
+select 
+date_format(orderdate, '%m-%Y') as Order_Month,
+round(sum(Sales),2) as Total_Sales_Amount,
+count(Customer_ID) as Total_Customers,
+sum(Quantity) as Total_Quantity
+from project.superstore_csv
+where Order_Date is NOT NULL
+group by date_format(orderdate, '%m-%Y')
+order by date_format(orderdate, '%m-%Y')
+) t; 
+
+#Performance Analysis
+#Comparing the current Value to the Target(previous values / Average Values)
+
+with yearly_sales as (
+select Category,year(orderdate) as order_year,
+round(sum(Sales)) as Current_Sales
+from project.superstore_csv 
+group by Category,year(orderdate)
+order by year(orderdate)
+)
+
+select Category,order_year,Current_Sales,
+lag(Current_Sales) over (partition by Category order by order_year) as PrevYear_Sales,
+Current_Sales - lag(Current_Sales) over (partition by Category order by order_year) as Diff_Sales,
+case when Current_Sales - lag(Current_Sales) over (partition by Category order by order_year)  > 0 then 'Increasing'
+	 when Current_Sales - lag(Current_Sales) over (partition by Category order by order_year)  < 0 then 'Decreasing'
+     Else 'Same'
+END PrevYear_Trend
+from yearly_sales;
