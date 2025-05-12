@@ -1,0 +1,22 @@
+#Data Segmentation
+#Grouping the data based on specific range
+with Customer_Behaviour as (
+select Customer_ID,
+round(sum(Sales)) as Customer_Spend,
+max(orderdate) as last_Order,
+min(orderdate) as First_Order,
+datediff(MAX(orderdate),MIN(orderdate)) AS Cutomer_Lifespan
+from project.superstore_csv
+group by Customer_ID)
+
+select Customer_Segment,
+count(Customer_ID) as total_customers
+from
+(
+select Customer_ID,
+case when Cutomer_Lifespan >=1200 and Customer_Spend >= 5000 then 'VIP'
+	 when Cutomer_Lifespan >=500 and Customer_Spend <= 5000 then 'Regular'
+     else 'New'
+     end Customer_Segment 
+
+from Customer_Behaviour) t group by Customer_Segment order by total_customers desc;
