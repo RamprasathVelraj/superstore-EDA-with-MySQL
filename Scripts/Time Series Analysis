@@ -1,0 +1,29 @@
+#Time Series Analysis
+#Helps Tracks Trends and Seasonality in the data
+#When analyzed based on months gives the seasonality of the sales
+
+select 
+month(orderdate) as Order_Month,
+round(sum(Sales),2) as Total_Sales_Amount,
+count(Customer_ID) as Total_Customers,
+sum(Quantity) as Total_Quantity
+from project.superstore_csv
+where Order_Date is NOT NULL
+group by month(orderdate)
+order by month(orderdate);
+
+#From Output - November and December were contributing much in the whole year
+
+
+#Total Sales Amount, Total Customers and Total Quantity over Year
+select 
+year(orderdate) as Order_Year,
+round(sum(Sales),2) as Total_Sales_Amount,
+count(Customer_ID) as Total_Customers,
+sum(Quantity) as Total_Quantity
+from project.superstore_csv
+where Order_Date is NOT NULL
+group by year(orderdate)
+order by year(orderdate);
+
+#From Output - gives the highlevel insights that helps with strategic decision-making
