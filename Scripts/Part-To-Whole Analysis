@@ -1,0 +1,14 @@
+#Part-To-Whole Analysis
+#To get the greatest impact on the business
+
+with Category_sales as (
+select Category,
+round(sum(Sales)) as Sumof_Sales
+from project.superstore_csv 
+group by Category
+)
+
+select Category,Sumof_Sales,
+sum(sumof_Sales) over() overall_sales,
+concat(Round((sumof_Sales/sum(sumof_Sales) over()) * 100,2),'%') as Percentage
+from Category_sales;
