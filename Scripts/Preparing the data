@@ -1,0 +1,13 @@
+#Imported the cleaned CSV file of SuperStore - using Power Query
+#Created a databse named - "project" to create a report for SuperStore
+
+#preparing the data
+#Converted the 'string' Order_Date and Ship_Date column to 'Date' type orderdate and shipdate in a new column respectively
+
+Alter table project.superstore_csv add orderdate date;
+update project.superstore_csv
+set orderdate = str_to_date(Order_date, '%d-%m-%Y');
+
+Alter table project.superstore_csv add shipdate date;
+update project.superstore_csv
+set shipdate = str_to_date(Ship_Date, '%d-%m-%Y');
