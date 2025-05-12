@@ -1,0 +1,118 @@
+#Created a databse named - "project" for EDA for SuperStore
+#Imported the cleaned CSV file of SuperStore
+
+#Time Series Analysis
+#Helps Tracks Trends and Seasonality in the data
+#Converted the 'string' Order_Date and Ship_Date column to 'Date' type orderdate and shipdate in a new column respectively
+
+Alter table project.superstore_csv add orderdate date;
+update project.superstore_csv
+set orderdate = str_to_date(Order_date, '%d-%m-%Y');
+
+Alter table project.superstore_csv add shipdate date;
+update project.superstore_csv
+set shipdate = str_to_date(Ship_Date, '%d-%m-%Y');
+
+#When analyzed based on months gives the seasonality of the sales
+
+select 
+month(orderdate) as Order_Month,
+round(sum(Sales),2) as Total_Sales_Amount,
+count(Customer_ID) as Total_Customers,
+sum(Quantity) as Total_Quantity
+from project.superstore_csv
+where Order_Date is NOT NULL
+group by month(orderdate)
+order by month(orderdate);
+
+#From Output - November and December were contributing much in the whole year
+
+
+#Total Sales Amount, Total Customers and Total Quantity over Year
+select 
+year(orderdate) as Order_Year,
+round(sum(Sales),2) as Total_Sales_Amount,
+count(Customer_ID) as Total_Customers,
+sum(Quantity) as Total_Quantity
+from project.superstore_csv
+where Order_Date is NOT NULL
+group by year(orderdate)
+order by year(orderdate);
+
+#From Output - gives the highlevel insights that helps with strategic decision-making
+
+
+#Cumulative Analysis
+#Gives the Running and Moving Values over the time
+
+select Order_Month,Total_Sales_Amount,
+sum(Total_Sales_Amount) over(partition by Order_Month) as Running_Total_Sales
+from
+(
+select 
+date_format(orderdate, '%m-%Y') as Order_Month,
+round(sum(Sales),2) as Total_Sales_Amount,
+count(Customer_ID) as Total_Customers,
+sum(Quantity) as Total_Quantity
+from project.superstore_csv
+where Order_Date is NOT NULL
+group by date_format(orderdate, '%m-%Y')
+order by date_format(orderdate, '%m-%Y')
+) t; 
+
+#Performance Analysis
+#Comparing the current Value to the Target(previous values / Average Values)
+
+with yearly_sales as (
+select Category,year(orderdate) as order_year,
+round(sum(Sales)) as Current_Sales
+from project.superstore_csv 
+group by Category,year(orderdate)
+order by year(orderdate)
+)
+
+select Category,order_year,Current_Sales,
+lag(Current_Sales) over (partition by Category order by order_year) as PrevYear_Sales,
+Current_Sales - lag(Current_Sales) over (partition by Category order by order_year) as Diff_Sales,
+case when Current_Sales - lag(Current_Sales) over (partition by Category order by order_year)  > 0 then 'Increasing'
+	 when Current_Sales - lag(Current_Sales) over (partition by Category order by order_year)  < 0 then 'Decreasing'
+     Else 'Same'
+END PrevYear_Trend
+from yearly_sales;
+
+#Part-To-Whole Analysis
+#To get the greatest impact on the business
+
+with Category_sales as (
+select Category,
+round(sum(Sales)) as Sumof_Sales
+from project.superstore_csv 
+group by Category
+)
+
+select Category,Sumof_Sales,
+sum(sumof_Sales) over() overall_sales,
+concat(Round((sumof_Sales/sum(sumof_Sales) over()) * 100,2),'%') as Percentage
+from Category_sales;
+
+#Data Segmentation
+#Grouping the data based on specific range
+with Customer_Behaviour as (
+select Customer_ID,
+round(sum(Sales)) as Customer_Spend,
+max(orderdate) as last_Order,
+min(orderdate) as First_Order,
+datediff(MAX(orderdate),MIN(orderdate)) AS Cutomer_Lifespan
+from project.superstore_csv
+group by Customer_ID)
+
+select Customer_Segment,
+count(Customer_ID) as total_customers
+from
+(
+select Customer_ID,
+case when Cutomer_Lifespan >=1200 and Customer_Spend >= 5000 then 'VIP'
+	 when Cutomer_Lifespan >=500 and Customer_Spend <= 5000 then 'Regular'
+     else 'New'
+     end Customer_Segment 
+from Customer_Behaviour) t group by Customer_Segment order by total_customers desc;
