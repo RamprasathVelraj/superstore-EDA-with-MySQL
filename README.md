@@ -35,4 +35,10 @@ What is the impact of discount on profitability?
 Which categories and sub-categories are underperforming?
 
 📬 Contact
+
 For contributions, questions, or feedback, feel free to reach out.
+
+RamprasathVelraj
+
+🌐 https://www.linkedin.com/in/ramprasath-velraj-b905551a1/
+
